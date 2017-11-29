@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(gocpp)
+project(go_cpp_server)
 
 set(CMAKE_CXX_STANDARD 11)
 
