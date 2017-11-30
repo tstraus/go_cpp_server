@@ -14,7 +14,7 @@ int main(int, char** argv) {
 
     auto port = [&args]() -> uint16_t {
         try {
-            return stoi(args("--port").str());
+            return (uint16_t)stoul(args("--port").str());
         } catch (...) {
             return 1234;
         }
