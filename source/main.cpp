@@ -4,20 +4,29 @@
 #include <argh.h>
 #include <rang.hpp>
 #include <loguru.hpp>
-#include <doctest.h>
 
 #include <iostream>
 
 using namespace std;
 
-int main(int argc, char** argv) {
+int main(int, char** argv) {
+    auto args = argh::parser(argv);
+
+    auto port = [&args]() -> uint16_t {
+        try {
+            return stoi(args("--port").str());
+        } catch (...) {
+            return 1234;
+        }
+    }();
+
     crow::SimpleApp app;
 
-    CROW_ROUTE(app, "/")([](){
+    CROW_ROUTE(app, "/")([]() {
         return "Hello world";
     });
 
-    app.port(18080).multithreaded().run();
+    app.port(port).multithreaded().run();
 
     return 0;
 }
