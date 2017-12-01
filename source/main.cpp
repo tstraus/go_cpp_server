@@ -4,6 +4,7 @@
 #include <argh.h>
 #include <rang.hpp>
 #include <loguru.hpp>
+#include <httplib.h>
 
 #include <iostream>
 #include <unordered_set>
@@ -35,6 +36,9 @@ int main(int, char** argv) {
         crow::mustache::context mustache;
         mustache["servername"] = name;
         mustache["port"] = port;
+        //mustache["board"] = "http://tstra.us/images/goBoard.svg";
+        mustache["board"] = "board.svg";
+        mustache["go"] = "http://tstra.us/scripts/go.js";
 
         return crow::mustache::load("ws.html").render(mustache);
     });
