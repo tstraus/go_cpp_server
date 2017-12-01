@@ -4,16 +4,37 @@
 #include <argh.h>
 #include <rang.hpp>
 #include <loguru.hpp>
-#include <httplib.h>
 
 #include <iostream>
 #include <unordered_set>
 #include <mutex>
+#include <unordered_map>
+#include <array>
 
 using namespace std;
 
 mutex mtx;
 unordered_set<crow::websocket::connection*> users;
+
+enum State {
+    EMPTY,
+    WHITE,
+    BLACK
+};
+
+unordered_map<string, array<array<State, 19>, 19>> games; // [x][y]
+
+bool clearGame(string id) {
+    if (games.count(id)) {
+        auto game = games[id];
+        for (auto column : game)
+            column.empty();
+
+        return true;
+    } else {
+        return false;
+    }
+}
 
 int main(int, char** argv) {
     auto args = argh::parser(argv);
@@ -24,21 +45,27 @@ int main(int, char** argv) {
         } catch (...) {
             return 1234;
         }
-    }();
+    } ();
 
-    char name[256];
-    gethostname(name, 256);
+    auto host = [&args]() -> string {
+        auto host = args("--ip").str();
+
+        if (host == "") {
+            return "127.0.0.1";
+        } else {
+            return host;
+        }
+    } ();
+
+    cout << "host: " << host << endl;
 
     crow::SimpleApp app;
     crow::mustache::set_base("./templates/");
 
-    CROW_ROUTE(app, "/")([&name, &port]() {
+    CROW_ROUTE(app, "/")([&host, &port]() {
         crow::mustache::context mustache;
-        mustache["servername"] = name;
+        mustache["host"] = host;
         mustache["port"] = port;
-        //mustache["board"] = "http://tstra.us/images/goBoard.svg";
-        mustache["board"] = "board.svg";
-        mustache["go"] = "http://tstra.us/scripts/go.js";
 
         return crow::mustache::load("ws.html").render(mustache);
     });
@@ -70,7 +97,7 @@ int main(int, char** argv) {
                 }
             });
 
-    app.port(port).multithreaded().run();
+    app.bindaddr("127.0.0.1").port(port).multithreaded().run();
 
     return 0;
 }
