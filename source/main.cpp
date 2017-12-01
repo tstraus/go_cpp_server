@@ -6,8 +6,13 @@
 #include <loguru.hpp>
 
 #include <iostream>
+#include <unordered_set>
+#include <mutex>
 
 using namespace std;
+
+mutex mtx;
+unordered_set<crow::websocket::connection*> users;
 
 int main(int, char** argv) {
     auto args = argh::parser(argv);
@@ -20,11 +25,46 @@ int main(int, char** argv) {
         }
     }();
 
-    crow::SimpleApp app;
+    char name[256];
+    gethostname(name, 256);
 
-    CROW_ROUTE(app, "/")([]() {
-        return "Hello world";
+    crow::SimpleApp app;
+    crow::mustache::set_base("./templates/");
+
+    CROW_ROUTE(app, "/")([&name, &port]() {
+        crow::mustache::context mustache;
+        mustache["servername"] = name;
+        mustache["port"] = port;
+
+        return crow::mustache::load("ws.html").render(mustache);
     });
+
+    CROW_ROUTE(app, "/ws")
+            .websocket()
+            .onopen([&](crow::websocket::connection& conn) {
+                cout << "new connection" << endl;
+                lock_guard<mutex> lock(mtx);
+
+                users.insert(&conn);
+            })
+            .onclose([&](crow::websocket::connection& conn, const string& reason) {
+                cout << "connection lost: " << reason << endl;
+                lock_guard<mutex> lock(mtx);
+
+                users.erase(&conn);
+            })
+            .onmessage([&](crow::websocket::connection& /*conn*/, const string& data, bool is_binary) {
+                cout << "data: " << data << endl;
+                lock_guard<mutex> lock(mtx);
+
+                for (auto u : users)
+                {
+                    if (is_binary)
+                        u->send_binary(data);
+                    else
+                        u->send_text(data);
+                }
+            });
 
     app.port(port).multithreaded().run();
 

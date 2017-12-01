@@ -26,6 +26,8 @@ else()
     find_package( Boost 1.52 COMPONENTS system thread REQUIRED )
 endif()
 
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/templates/ws.html ${CMAKE_CURRENT_BINARY_DIR}/templates/ws.html COPYONLY)
+
 include_directories(
     ${Boost_INCLUDE_DIR}
     ${PROJECT_SOURCE_DIR}/include
@@ -41,5 +43,6 @@ add_executable(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     ${Boost_LIBRARIES}
+    ${OPENSSL_LIBRARIES}
     ${CMAKE_THREAD_LIBS_INIT}
 )
