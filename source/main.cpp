@@ -56,7 +56,8 @@ int main(int, char** argv) {
         return crow::mustache::load("go.html").render(mustache);
     });
 
-    CROW_ROUTE(app, "/ws").websocket()
+    CROW_ROUTE(app, "/ws")
+        .websocket()
             .onopen([&](crow::websocket::connection& conn) {
                 lock_guard<mutex> lock(mtx);
 
