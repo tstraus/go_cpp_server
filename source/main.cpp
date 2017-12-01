@@ -57,8 +57,6 @@ int main(int, char** argv) {
         }
     } ();
 
-    cout << "host: " << host << endl;
-
     crow::SimpleApp app;
     crow::mustache::set_base("./templates/");
 
@@ -97,7 +95,7 @@ int main(int, char** argv) {
                 }
             });
 
-    app.bindaddr("127.0.0.1").port(port).multithreaded().run();
+    app.bindaddr(host).port(port).multithreaded().run();
 
     return 0;
 }
