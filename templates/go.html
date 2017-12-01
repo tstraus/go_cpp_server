@@ -1,4 +1,5 @@
 <!doctype html>
+<meta charset="UTF-8">
 <html>
 <head>
     <script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
@@ -152,6 +153,8 @@
 <script>
     var sock = new WebSocket("ws://{{host}}:{{port}}/ws")
 
+    var gameID = "";
+
     function createArray(length) {
         var arr = new Array(length || 0), i = length
 
@@ -244,15 +247,34 @@
         console.log('open')
     }
 
-    sock.onerror = (e) => {
-        console.log('error', e)
+    sock.onerror = (event) => {
+        console.log('error', event)
     }
 
     sock.onclose = () => {
         console.log('close')
     }
 
-    sock.onmessage = (e) => {
+    sock.onmessage = (event) => {
+        msg = JSON.parse(event.data)
+        console.log(msg)
+
+        if (msg.action === 'newGame') {
+            gameID = msg.data.gameID
+        }
+
+        switch (msg.action) {
+            case 'newGame':
+                gameID = msg.data.gameID
+                break
+
+            case 'chat':
+                $("#log").val(
+                    msg.data.msg + "\n" + $("#log").val()
+                )
+                break
+        }
+
         //$("#log").val(
             //e.data + "\n" + $("#log").val()
         // )
@@ -262,17 +284,26 @@
         // drawStone(move.x, move.y, board[move.y][move.x])
     }
 
+    function sendChat() {
+        sock.send(JSON.stringify({
+            gameID: gameID,
+            action: 'chat',
+            data: {
+                msg: $("#msg").val()
+            }
+        }))
+
+        $("#msg").val("")
+    }
+
     $("#msg").keypress(function(e) {
-        if (e.which == 13)
-        {
-            sock.send($("#msg").val())
-            $("#msg").val("")
+        if (e.which == 13) {
+             sendChat()
         }
     })
 
     $("#send").click(() => {
-        sock.send($("#msg").val())
-        $("#msg").val("")
+        sendChat()
     })
 </script>
 </body>

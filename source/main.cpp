@@ -4,40 +4,53 @@
 #include <argh.h>
 #include <rang.hpp>
 #include <loguru.hpp>
+#include <sole.h>
 
 #include <iostream>
-#include <unordered_set>
+#include <memory>
 #include <mutex>
 #include <unordered_map>
 #include <array>
 
 using namespace std;
+using namespace argh;
+using namespace rang;
+using namespace sole;
+using json = nlohmann::json;
 
 mutex mtx;
-unordered_set<crow::websocket::connection*> users;
 
-enum State {
-    EMPTY,
-    WHITE,
-    BLACK
+class Game {
+public:
+    string gameID;
+
+    crow::websocket::connection* white;
+    crow::websocket::connection* black;
+
+    enum State {
+        EMPTY,
+        WHITE,
+        BLACK
+    };
+
+    array<array<State, 19>, 19> state; // [x][y]
+
+    Game(string gameID) : gameID(gameID), white(nullptr), black(nullptr) {
+        clearState();
+    }
+
+    void clearState() {
+        for (auto& column : state) {
+            for (auto& place : column)
+                place = EMPTY;
+        }
+    }
 };
 
-unordered_map<string, array<array<State, 19>, 19>> games; // [x][y]
-
-bool clearGame(string id) {
-    if (games.count(id)) {
-        auto game = games[id];
-        for (auto column : game)
-            column.empty();
-
-        return true;
-    } else {
-        return false;
-    }
-}
+unordered_map<string, shared_ptr<Game>> games;
 
 int main(int, char** argv) {
-    auto args = argh::parser(argv);
+    auto args = parser(argv);
 
     auto port = [&args]() -> uint16_t {
         try {
@@ -65,33 +78,50 @@ int main(int, char** argv) {
         mustache["host"] = host;
         mustache["port"] = port;
 
-        return crow::mustache::load("ws.html").render(mustache);
+        return crow::mustache::load("go.html").render(mustache);
     });
 
-    CROW_ROUTE(app, "/ws")
-            .websocket()
+    CROW_ROUTE(app, "/ws").websocket()
             .onopen([&](crow::websocket::connection& conn) {
-                cout << "new connection" << endl;
                 lock_guard<mutex> lock(mtx);
 
-                users.insert(&conn);
+                auto game = make_shared<Game>(uuid4().str());
+                game->white = &conn;
+                game->black = &conn; // for now...
+                games[game->gameID] = game;
+
+                json newGame = {
+                        {"action", "newGame"},
+                        {"data", {
+                            {"gameID", game->gameID}
+                        }}
+                };
+                conn.send_text(newGame.dump());
+
+                cout << fg::green << "New Game: " << style::reset << game->gameID << endl;
             })
-            .onclose([&](crow::websocket::connection& conn, const string& reason) {
-                cout << "connection lost: " << reason << endl;
+            .onclose([&](crow::websocket::connection& /*conn*/, const string& reason) {
                 lock_guard<mutex> lock(mtx);
 
-                users.erase(&conn);
+                // figure out how to set the pointer of the player to nullptr in games
+                cout << fg::red << "Connection Lost: " << style::reset << reason << endl;
             })
             .onmessage([&](crow::websocket::connection& /*conn*/, const string& data, bool is_binary) {
-                cout << "data: " << data << endl;
                 lock_guard<mutex> lock(mtx);
 
-                for (auto u : users)
-                {
-                    if (is_binary)
-                        u->send_binary(data);
-                    else
-                        u->send_text(data);
+                if (!is_binary) {
+                    cout << "Msg: " << data << endl;
+
+                    auto msg = json::parse(data);
+
+                    if (msg["action"] == "chat") {
+                        auto game = games[msg["gameID"]];
+
+                        if (game->white != nullptr && game->black != nullptr) {
+                            game->white->send_text(data);
+                            game->black->send_text(data);
+                        }
+                    }
                 }
             });
 

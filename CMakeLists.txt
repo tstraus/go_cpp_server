@@ -34,7 +34,7 @@ else()
     find_package( Boost 1.52 COMPONENTS system thread REQUIRED )
 endif()
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/templates/ws.html ${CMAKE_CURRENT_BINARY_DIR}/templates/ws.html COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/templates/go.html ${CMAKE_CURRENT_BINARY_DIR}/templates/go.html COPYONLY)
 
 include_directories(
     ${Boost_INCLUDE_DIR}
