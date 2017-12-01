@@ -3,7 +3,7 @@
 #### Dependencies (Ubuntu)
  - libssl-dev
  - libboost-all-dev
- - google-perftools
+ - libgoogle-perftools-dev
 
 ###### License
 MIT
