@@ -5,6 +5,14 @@ set(CMAKE_CXX_STANDARD 11)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
+if (CMAKE_COMPILER_IS_GNUCC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wimplicit-fallthrough=0")
+endif()
+
+if (MSVC)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+endif()
+
 find_package(Tcmalloc)
 find_package(Threads)
 find_package(OpenSSL)
