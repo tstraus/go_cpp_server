@@ -12,6 +12,8 @@
 #include <unordered_map>
 #include <array>
 
+#include "game.h"
+
 using namespace std;
 using namespace argh;
 using namespace rang;
@@ -19,33 +21,6 @@ using namespace sole;
 using json = nlohmann::json;
 
 mutex mtx;
-
-class Game {
-public:
-    string gameID;
-
-    crow::websocket::connection* white;
-    crow::websocket::connection* black;
-
-    enum State {
-        EMPTY,
-        WHITE,
-        BLACK
-    };
-
-    array<array<State, 19>, 19> state; // [x][y]
-
-    Game(string gameID) : gameID(gameID), white(nullptr), black(nullptr) {
-        clearState();
-    }
-
-    void clearState() {
-        for (auto& column : state) {
-            for (auto& place : column)
-                place = EMPTY;
-        }
-    }
-};
 
 unordered_map<string, shared_ptr<Game>> games;
 

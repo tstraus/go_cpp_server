@@ -38,15 +38,23 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/templates/go.html ${CMAKE_CURRENT_BIN
 
 include_directories(
     ${Boost_INCLUDE_DIR}
+
     ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/header
 )
 
 set(SOURCE
     source/main.cpp
+    source/game.cpp
+)
+
+set(HEADER
+    header/game.h
 )
 
 add_executable(${PROJECT_NAME}
     ${SOURCE}
+    ${HEADER}
 )
 
 target_link_libraries(${PROJECT_NAME}
