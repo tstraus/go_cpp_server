@@ -17,8 +17,10 @@ public:
 
     Game(string gameID);
 
+    // sets all positions on the board to EMPTY
     void clearState();
 
+    // returns true if the move was successful
     bool attemptMove(State color, uint16_t x, uint16_t y);
 
     string gameID;
@@ -27,7 +29,7 @@ public:
     crow::websocket::connection* black;
 
 private:
-    array<array<State, 19>, 19> state; // [x][y]
+    array<array<State, 19>, 19> board; // [x][y]
 };
 
 #endif // __GAME_H__

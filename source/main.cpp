@@ -12,6 +12,7 @@
 #include <mutex>
 #include <unordered_map>
 #include <array>
+#include <deque>
 
 #include "game.h"
 
@@ -24,7 +25,7 @@ using json = nlohmann::json;
 mutex mtx;
 
 unordered_map<string, shared_ptr<Game>> games;
-string currentGame;
+deque<string> unmatchedGames;
 
 int main(int, char** argv) {
     auto args = parser(argv);
@@ -72,7 +73,7 @@ int main(int, char** argv) {
             .onopen([&](crow::websocket::connection& conn) {
                 lock_guard<mutex> lock(mtx);
 
-                if (currentGame == "") {
+                if (unmatchedGames.empty()) { // creating a new game
                     auto game = make_shared<Game>(uuid4().str());
                     game->black = &conn;
                     games[game->gameID] = game;
@@ -85,32 +86,66 @@ int main(int, char** argv) {
 
                     cout << fg::green << "New Game: " << style::reset << game->gameID << endl;
 
-                    currentGame = game->gameID;
-                } else {
-                    games[currentGame]->white = &conn;
+                    unmatchedGames.push_back(game->gameID);
+                } else { // joining an existing game
+                    games[unmatchedGames.front()]->white = &conn;
 
                     json newGame = {
-                        {"gameID", currentGame},
+                        {"gameID", unmatchedGames.front()},
                         {"action", "newGame"}
                     };
                     conn.send_text(newGame.dump());
 
-                    cout << fg::green << "Joined Game: " << style::reset << currentGame << endl;
+                    cout << fg::green << "Joined Game: " << style::reset << unmatchedGames.front() << endl;
 
-                    currentGame = "";
+                    unmatchedGames.pop_front();
                 }
 
             })
             .onclose([&](crow::websocket::connection& conn, const string& reason) {
                 lock_guard<mutex> lock(mtx);
 
+                json msg = {
+                    {"action", "chat"},
+                    {"data", {
+                        {"msg", "opponent lost connection, waiting for new player..."}
+                    }}
+                };
+
+                string gameToRemove;
+
+                // search for the game with the lost connection
                 for (auto& game : games) {
-                    if (game.second->white == &conn) {
+                    if (game.second->white == &conn && game.second->black != nullptr) {
                         game.second->white = nullptr;
-                    } else if (game.second->black == &conn) {
+                        msg["gameID"] = game.second->gameID;
+
+                        game.second->black->send_text(msg.dump());
+
+                        unmatchedGames.push_back(game.second->gameID);
+
+                        break;
+                    }
+
+                    else if (game.second->black == &conn && game.second->white != nullptr) {
                         game.second->black = nullptr;
+                        msg["gameID"] = game.second->gameID;
+
+                        game.second->white->send_text(msg.dump());
+
+                        unmatchedGames.push_back(game.second->gameID);
+
+                        break;
+                    }
+
+                    else { // game no longer has any players
+                        gameToRemove = game.second->gameID;
                     }
                 }
+
+                // remove game if it no longer has any players
+                if (!gameToRemove.empty())
+                    games.count(gameToRemove);
 
                 // figure out how to set the pointer of the player to nullptr in games
                 cout << fg::red << "Connection Lost: " << style::reset << reason << endl;
@@ -129,6 +164,7 @@ int main(int, char** argv) {
                     if (action == "chat") {
                         auto game = games[gameID];
 
+                        // forward chat message
                         if (game->white != nullptr && game->black != nullptr) {
                             game->white->send_text(data);
                             game->black->send_text(data);
@@ -142,6 +178,7 @@ int main(int, char** argv) {
                         auto x = msg["data"]["x"];
                         auto y = msg["data"]["y"];
 
+                        // attempt to make the received move
                         if (game->white != nullptr && game->black != nullptr && game->attemptMove(color, x, y)) {
                             json move = {
                                 {"gameID", gameID},
@@ -155,6 +192,7 @@ int main(int, char** argv) {
 
                             auto output = move.dump();
 
+                            // send the completed move to both clients
                             game->white->send_text(output);
                             game->black->send_text(output);
                         }
