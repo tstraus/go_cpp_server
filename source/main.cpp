@@ -40,7 +40,7 @@ int main(int, char** argv) {
     } ();
 
     auto host = [&args]() -> string {
-        auto host = args("--ip").str();
+        auto host = args("--host").str();
 
         if (host == "") {
             return "127.0.0.1";
@@ -57,7 +57,7 @@ int main(int, char** argv) {
         stringstream hostStream;
 
         if (serverMode) {
-            hostStream << host;
+            hostStream << "tstraus.net";
         } else {
             hostStream << host << ":" << port;
         }
