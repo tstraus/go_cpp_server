@@ -102,14 +102,29 @@ int main(int, char** argv) {
                         black = true;
                     }
 
-                    json newGame = {
+                    json stones = json::array();
+                    for (int y = 0; y < 19; y++) {
+                        for (int x = 0; x < 19; x++) {
+                            auto state = game->checkState(x, y);
+                            if (state != Game::EMPTY) {
+                                stones.push_back({
+                                    {"color", state == Game::BLACK ? "b" : "w"},
+                                    {"x", x},
+                                    {"y", y}
+                                });
+                            }
+                        }
+                    }
+
+                    json joinGame = {
                         {"gameID", unmatchedGames.front()},
                         {"action", "joinGame"},
                         {"data", {
-                            {"black", black}
+                            {"black", black},
+                            {"stones", stones}
                         }}
                     };
-                    conn.send_text(newGame.dump());
+                    conn.send_text(joinGame.dump());
 
                     cout << fg::green << "Joined Game: " << style::reset << unmatchedGames.front() << endl;
 

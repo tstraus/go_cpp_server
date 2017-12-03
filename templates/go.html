@@ -217,15 +217,11 @@
         display.appendChild(circle)
     }
 
-    function refreshBoard(data) {
-        for (var y = 0; y < 19; y++) {
-            for (var x = 0; x < 19; x++) {
-                if (data[y][x] === 'b' || data[y][x] === 'w') {
-                    drawStone(x, y, data[y][x])
-                    board[y][x] = data[y][x]
-                }
-            }
-        }
+    function refreshBoard(stones) {
+        stones.forEach(function (stone) {
+            drawStone(stone.x, stone.y, stone.color)
+            board[stone.y][stone.x] = stone.color
+        })
     }
 
     display.addEventListener('click', function (evt) {
@@ -270,6 +266,7 @@
             case 'joinGame':
                 gameID = msg.gameID
                 black = msg.data.black
+                refreshBoard(msg.data.stones)
                 break
 
             case 'move':

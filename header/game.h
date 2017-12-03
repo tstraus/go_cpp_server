@@ -23,6 +23,8 @@ public:
     // returns true if the move was successful
     bool attemptMove(State color, uint16_t x, uint16_t y);
 
+    State checkState(uint16_t x, uint16_t y);
+
     string gameID;
 
     crow::websocket::connection* white;

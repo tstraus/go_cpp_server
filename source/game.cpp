@@ -21,3 +21,7 @@ bool Game::attemptMove(State color, uint16_t x, uint16_t y) {
         return true;
     } else return false;
 }
+
+Game::State Game::checkState(uint16_t x, uint16_t y) {
+    return board[x][y];
+}
