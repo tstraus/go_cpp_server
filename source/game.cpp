@@ -10,3 +10,11 @@ void Game::clearState() {
             place = EMPTY;
     }
 }
+
+bool Game::attemptMove(State color, uint16_t x, uint16_t y) {
+    if (state[x][y] == EMPTY) {
+        state[x][y] = color;
+
+        return true;
+    } else return false;
+}

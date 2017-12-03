@@ -67,10 +67,8 @@ int main(int, char** argv) {
                 games[game->gameID] = game;
 
                 json newGame = {
-                        {"action", "newGame"},
-                        {"data", {
-                            {"gameID", game->gameID}
-                        }}
+                    {"gameID", game->gameID},
+                    {"action", "newGame"}
                 };
                 conn.send_text(newGame.dump());
 
@@ -90,12 +88,42 @@ int main(int, char** argv) {
 
                     auto msg = json::parse(data);
 
-                    if (msg["action"] == "chat") {
-                        auto game = games[msg["gameID"]];
+                    auto action = msg["action"];
+                    auto gameID = msg["gameID"];
+
+                    if (action == "chat") {
+                        auto game = games[gameID];
 
                         if (game->white != nullptr && game->black != nullptr) {
                             game->white->send_text(data);
                             game->black->send_text(data);
+                        }
+                    }
+
+                    else if (action == "attemptMove") {
+                        auto game = games[gameID];
+
+                        auto color = msg["data"]["black"] ? Game::State::BLACK : Game::State::WHITE;
+                        auto x = msg["data"]["x"];
+                        auto y = msg["data"]["y"];
+
+                        if (game->attemptMove(color, x, y)) {
+                            json move = {
+                                {"gameID", gameID},
+                                {"action", "move"},
+                                {"data", {
+                                    {"black", msg["data"]["black"]},
+                                    {"x", x},
+                                    {"y", y}
+                                }}
+                            };
+
+                            if (game->white != nullptr && game->black != nullptr) {
+                                auto output = move.dump();
+
+                                game->white->send_text(output);
+                                game->black->send_text(output);
+                            }
                         }
                     }
                 }

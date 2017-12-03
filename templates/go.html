@@ -166,77 +166,81 @@
         return arr
     }
 
+    var display = document.getElementById('board')
+    var board = createArray(19, 19)
+    var pt = display.createSVGPoint()
+    var black = true
+
     function newGame() {
-        var display = document.getElementById('board')
+        board = createArray(19, 19)
+        pt = display.createSVGPoint()
+        black = true
+    }
 
-        var board = createArray(19, 19)
-        var pt = display.createSVGPoint()
-        var black = true
+    function cursourPoint(evt) {
+        pt.x = evt.clientX
+        pt.y = evt.clientY
+        return pt.matrixTransform(display.getScreenCTM().inverse())
+    }
 
-        function cursourPoint(evt) {
-            pt.x = evt.clientX
-            pt.y = evt.clientY
-            return pt.matrixTransform(display.getScreenCTM().inverse())
+    function placeStone(location, color) {
+        x = Math.round((location.x - 50) / 100)
+        y = Math.round((location.y - 50) / 100)
+
+        if (!(board[y][x] === 'b') && !(board[y][x] === 'white')) {
+            sock.send(JSON.stringify({
+                gameID: gameID,
+                action: 'attemptMove',
+                data: {
+                    black: black,
+                    x: x,
+                    y: y
+                }
+            }));
+        }
+    }
+
+    function drawStone(x, y, color) {
+        var circle = document.createElementNS("http://www.w3.org/2000/svg", 'circle')
+        circle.setAttribute('cx', x * 100 + 50)
+        circle.setAttribute('cy', y * 100 + 50)
+        circle.setAttribute('r', '40')
+
+        if (color === 'b') {
+            circle.setAttribute('fill', 'black')
         }
 
-        function placeStone(location, color) {
-            x = Math.round((location.x - 50) / 100)
-            y = Math.round((location.y - 50) / 100)
-
-            if (!(board[y][x] === 'b') && !(board[y][x] === 'white')) {
-                sock.send(JSON.stringify({
-                    action: 'move',
-                    data: {
-                        black: black,
-                        x: x,
-                        y: y
-                    }
-                }));
-            }
+        if (color === 'w') {
+            circle.setAttribute('fill', 'white')
         }
 
-        function drawStone(x, y, color) {
-            var circle = document.createElementNS("http://www.w3.org/2000/svg", 'circle')
-            circle.setAttribute('cx', x * 100 + 50)
-            circle.setAttribute('cy', y * 100 + 50)
-            circle.setAttribute('r', '40')
+        display.appendChild(circle)
+    }
 
-            if (color === 'b') {
-                circle.setAttribute('fill', 'black')
-            }
-
-            if (color === 'w') {
-                circle.setAttribute('fill', 'white')
-            }
-
-            display.appendChild(circle)
-        }
-
-        function refreshBoard(data) {
-            for (var y = 0; y < 19; y++) {
-                for (var x = 0; x < 19; x++) {
-                    if (data[y][x] === 'b' || data[y][x] === 'w') {
-                        drawStone(x, y, data[y][x])
-                        board[y][x] = data[y][x]
-                    }
+    function refreshBoard(data) {
+        for (var y = 0; y < 19; y++) {
+            for (var x = 0; x < 19; x++) {
+                if (data[y][x] === 'b' || data[y][x] === 'w') {
+                    drawStone(x, y, data[y][x])
+                    board[y][x] = data[y][x]
                 }
             }
         }
-
-        display.addEventListener('click', function (evt) {
-            var loc = cursourPoint(evt);
-
-            if (black) {
-                if (placeStone(loc, 'black'))
-                    black = !black
-            }
-
-            else {
-                if (placeStone(loc, 'white'))
-                    black = !black
-            }
-        }, false)
     }
+
+    display.addEventListener('click', function (evt) {
+        var loc = cursourPoint(evt);
+
+        if (black) {
+            if (placeStone(loc, 'black'))
+                black = !black
+        }
+
+        else {
+            if (placeStone(loc, 'white'))
+                black = !black
+        }
+    }, false)
 
     window.onload = function()
     {
@@ -259,19 +263,34 @@
         msg = JSON.parse(event.data)
         console.log(msg)
 
-        if (msg.action === 'newGame') {
-            gameID = msg.data.gameID
-        }
-
         switch (msg.action) {
             case 'newGame':
-                gameID = msg.data.gameID
+                gameID = msg.gameID
+                break
+
+            case 'move':
+                if (msg.gameID === gameID) {
+                    if (msg.data.black) {
+                        board[msg.data.y][msg.data.x] = 'b'
+                        black = false
+                    }
+
+                    else {
+                        board[msg.data.y][msg.data.x] = 'w'
+                        black = true
+                    }
+
+                    drawStone(msg.data.x, msg.data.y, board[msg.data.y][msg.data.x])
+                }
+
                 break
 
             case 'chat':
-                $("#log").val(
-                    msg.data.msg + "\n" + $("#log").val()
-                )
+                if (msg.gameID === gameID) {
+                    $("#log").val(
+                        msg.data.msg + "\n" + $("#log").val()
+                    )
+                }
                 break
         }
 
