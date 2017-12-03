@@ -101,8 +101,16 @@ int main(int, char** argv) {
                 }
 
             })
-            .onclose([&](crow::websocket::connection& /*conn*/, const string& reason) {
+            .onclose([&](crow::websocket::connection& conn, const string& reason) {
                 lock_guard<mutex> lock(mtx);
+
+                for (auto& game : games) {
+                    if (game.second->white == &conn) {
+                        game.second->white = nullptr;
+                    } else if (game.second->black == &conn) {
+                        game.second->black = nullptr;
+                    }
+                }
 
                 // figure out how to set the pointer of the player to nullptr in games
                 cout << fg::red << "Connection Lost: " << style::reset << reason << endl;
