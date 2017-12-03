@@ -29,7 +29,7 @@ string currentGame;
 int main(int, char** argv) {
     auto args = parser(argv);
 
-    auto localMode = args["--local"];
+    auto serverMode = args["--server"];
 
     auto port = [&args]() -> uint16_t {
         try {
@@ -52,14 +52,14 @@ int main(int, char** argv) {
     crow::SimpleApp app;
     crow::mustache::set_base("./templates/");
 
-    CROW_ROUTE(app, "/")([&host, &port]() {
+    CROW_ROUTE(app, "/")([&host, &port, &serverMode]() {
         crow::mustache::context mustache;
         stringstream hostStream;
 
-        if (localMode) {
-            hostStream << host << ":" << port;
-        } else {
+        if (serverMode) {
             hostStream << host;
+        } else {
+            hostStream << host << ":" << port;
         }
 
         mustache["host"] = hostStream.str();
