@@ -7,6 +7,7 @@
 #include <sole.h>
 
 #include <iostream>
+#include <sstream>
 #include <memory>
 #include <mutex>
 #include <unordered_map>
@@ -27,6 +28,8 @@ string currentGame;
 
 int main(int, char** argv) {
     auto args = parser(argv);
+
+    auto localMode = args["--local"];
 
     auto port = [&args]() -> uint16_t {
         try {
@@ -51,13 +54,20 @@ int main(int, char** argv) {
 
     CROW_ROUTE(app, "/")([&host, &port]() {
         crow::mustache::context mustache;
-        mustache["host"] = host;
-        mustache["port"] = port;
+        stringstream hostStream;
+
+        if (localMode) {
+            hostStream << host << ":" << port;
+        } else {
+            hostStream << host;
+        }
+
+        mustache["host"] = hostStream.str();
 
         return crow::mustache::load("go.html").render(mustache);
     });
 
-    CROW_ROUTE(app, "/ws")
+    CROW_ROUTE(app, "/go")
         .websocket()
             .onopen([&](crow::websocket::connection& conn) {
                 lock_guard<mutex> lock(mtx);
