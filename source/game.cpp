@@ -5,6 +5,8 @@ Game::Game(string gameID) : gameID(gameID), white(nullptr), black(nullptr) {
 }
 
 void Game::clearState() {
+    turn = BLACK;
+
     for (auto& column : board) {
         for (auto& place : column)
             place = EMPTY;
@@ -12,8 +14,9 @@ void Game::clearState() {
 }
 
 bool Game::attemptMove(State color, uint16_t x, uint16_t y) {
-    if (board[x][y] == EMPTY) {
+    if (turn == color && board[x][y] == EMPTY) {
         board[x][y] = color;
+        turn = color == BLACK ? WHITE : BLACK;
 
         return true;
     } else return false;

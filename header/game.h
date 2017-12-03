@@ -30,6 +30,8 @@ public:
 
 private:
     array<array<State, 19>, 19> board; // [x][y]
+
+    State turn;
 };
 
 #endif // __GAME_H__

@@ -232,13 +232,11 @@
         var loc = cursourPoint(evt);
 
         if (black) {
-            if (placeStone(loc, 'black'))
-                black = !black
+            placeStone(loc, 'black')
         }
 
         else {
-            if (placeStone(loc, 'white'))
-                black = !black
+            placeStone(loc, 'white')
         }
     }, false)
 
@@ -266,18 +264,22 @@
         switch (msg.action) {
             case 'newGame':
                 gameID = msg.gameID
+                black = msg.data.black
+                break
+
+            case 'joinGame':
+                gameID = msg.gameID
+                black = msg.data.black
                 break
 
             case 'move':
                 if (msg.gameID === gameID) {
                     if (msg.data.black) {
                         board[msg.data.y][msg.data.x] = 'b'
-                        black = false
                     }
 
                     else {
                         board[msg.data.y][msg.data.x] = 'w'
-                        black = true
                     }
 
                     drawStone(msg.data.x, msg.data.y, board[msg.data.y][msg.data.x])
@@ -293,14 +295,6 @@
                 }
                 break
         }
-
-        //$("#log").val(
-            //e.data + "\n" + $("#log").val()
-        // )
-
-        // on place if color
-        // board[move.y][move.x] = 'c'
-        // drawStone(move.x, move.y, board[move.y][move.x])
     }
 
     function sendChat() {

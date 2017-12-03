@@ -80,7 +80,10 @@ int main(int, char** argv) {
 
                     json newGame = {
                         {"gameID", game->gameID},
-                        {"action", "newGame"}
+                        {"action", "newGame"},
+                        {"data", {
+                            {"black", true}
+                        }}
                     };
                     conn.send_text(newGame.dump());
 
@@ -88,11 +91,23 @@ int main(int, char** argv) {
 
                     unmatchedGames.push_back(game->gameID);
                 } else { // joining an existing game
-                    games[unmatchedGames.front()]->white = &conn;
+                    auto game = games[unmatchedGames.front()];
+                    bool black;
+
+                    if (game->white == nullptr) {
+                        game->white = &conn;
+                        black = false;
+                    } else {
+                        game->black = &conn;
+                        black = true;
+                    }
 
                     json newGame = {
                         {"gameID", unmatchedGames.front()},
-                        {"action", "newGame"}
+                        {"action", "joinGame"},
+                        {"data", {
+                            {"black", black}
+                        }}
                     };
                     conn.send_text(newGame.dump());
 
