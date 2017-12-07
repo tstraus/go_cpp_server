@@ -73,6 +73,8 @@ int main(int, char** argv) {
             .onopen([&](crow::websocket::connection& conn) {
                 lock_guard<mutex> lock(mtx);
 
+                cout << fg::cyan << games.size() << "Games already exist" << endl;
+
                 if (unmatchedGames.empty()) { // creating a new game
                     auto game = make_shared<Game>(uuid4().str());
                     game->black = &conn;
@@ -164,7 +166,7 @@ int main(int, char** argv) {
                     }
 
                     else if (game.second->black == &conn && game.second->white != nullptr) {
-                        cout << fg::yellow << "Lost Black: " << style::reset << game.second->gameID << endl;
+                        cout << fg::yellow << "Lost Black : " << style::reset << game.second->gameID << endl;
 
                         game.second->black = nullptr;
                         msg["gameID"] = game.second->gameID;
