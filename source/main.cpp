@@ -12,7 +12,8 @@
 #include <mutex>
 #include <unordered_map>
 #include <array>
-#include <deque>
+#include <queue>
+#include <algorithm>
 
 #include "game.h"
 
@@ -73,7 +74,8 @@ int main(int, char** argv) {
             .onopen([&](crow::websocket::connection& conn) {
                 lock_guard<mutex> lock(mtx);
 
-                cout << fg::cyan << games.size() << "Games already exist" << endl;
+                cout << fg::cyan << games.size() << " Games already exist" << style::reset << endl;
+                cout << fg::cyan << unmatchedGames.size() << " Unmatched games" << style::reset << endl;
 
                 if (unmatchedGames.empty()) { // creating a new game
                     auto game = make_shared<Game>(uuid4().str());
@@ -132,7 +134,7 @@ int main(int, char** argv) {
                     };
                     conn.send_text(joinGame.dump());
 
-                    cout << fg::green << "Joined Game: " << style::reset << unmatchedGames.front() << endl;
+                    cout << fg::green << "Joined Game: " << style::reset << game->gameID << endl;
 
                     unmatchedGames.pop_front();
                 }
@@ -149,6 +151,13 @@ int main(int, char** argv) {
                 };
 
                 string gameToRemove;
+
+                // remove dead keys
+                for (auto it = begin(games); it != end(games);) {
+                    if (it->second == nullptr) {
+                        it = games.erase(it);
+                    } else ++it;
+                }
 
                 // search for the game with the lost connection
                 for (auto& game : games) {
@@ -178,20 +187,29 @@ int main(int, char** argv) {
                         break;
                     }
 
-                    else { // game no longer has any players
+                    // game no longer has any players
+                    else if (game.second->white != nullptr && game.second->black != nullptr) {
                         gameToRemove = game.second->gameID;
                     }
                 }
 
                 // remove game if it no longer has any players
-                if (!gameToRemove.empty()) {
+                if (!gameToRemove.empty())
+                {
                     cout << fg::yellow << "Removing Game: " << style::reset << gameToRemove << endl;
 
                     games.erase(gameToRemove);
+
+                    unmatchedGames.erase(
+                        remove_if(unmatchedGames.begin(), unmatchedGames.end(), [&gameToRemove](string game)
+                        {
+                            return game == gameToRemove;
+                        }), unmatchedGames.end()
+                    );
                 }
 
                 // figure out how to set the pointer of the player to nullptr in games
-                cout << fg::red << "Connection Lost: " << style::reset << reason << endl;
+                cout << fg::red << "Connection Lost: " << style::reset << &conn << endl;
             })
             .onmessage([&](crow::websocket::connection& /*conn*/, const string& data, bool is_binary) {
                 lock_guard<mutex> lock(mtx);
@@ -203,41 +221,44 @@ int main(int, char** argv) {
 
                     auto action = msg["action"];
                     auto gameID = msg["gameID"];
+                    auto game = games[gameID];
 
-                    if (action == "chat") {
-                        auto game = games[gameID];
+                    if (game != nullptr) {
+                        if (action=="chat") {
+                            auto game = games[gameID];
 
-                        // forward chat message
-                        if (game->white != nullptr && game->black != nullptr) {
-                            game->white->send_text(data);
-                            game->black->send_text(data);
+                            // forward chat message
+                            if (game->white!=nullptr && game->black!=nullptr) {
+                                game->white->send_text(data);
+                                game->black->send_text(data);
+                            }
                         }
-                    }
 
-                    else if (action == "attemptMove") {
-                        auto game = games[gameID];
+                        else if (action=="attemptMove") {
+                            auto game = games[gameID];
 
-                        auto color = msg["data"]["black"] ? Game::State::BLACK : Game::State::WHITE;
-                        auto x = msg["data"]["x"];
-                        auto y = msg["data"]["y"];
+                            auto color = msg["data"]["black"] ? Game::State::BLACK : Game::State::WHITE;
+                            auto x = msg["data"]["x"];
+                            auto y = msg["data"]["y"];
 
-                        // attempt to make the received move
-                        if (game->white != nullptr && game->black != nullptr && game->attemptMove(color, x, y)) {
-                            json move = {
-                                {"gameID", gameID},
-                                {"action", "move"},
-                                {"data", {
-                                    {"black", msg["data"]["black"]},
-                                    {"x", x},
-                                    {"y", y}
-                                }}
-                            };
+                            // attempt to make the received move
+                            if (game->white!=nullptr && game->black!=nullptr && game->attemptMove(color, x, y)) {
+                                json move = {
+                                        {"gameID", gameID},
+                                        {"action", "move"},
+                                        {"data",   {
+                                                           {"black", msg["data"]["black"]},
+                                                           {"x", x},
+                                                           {"y", y}
+                                                   }}
+                                };
 
-                            auto output = move.dump();
+                                auto output = move.dump();
 
-                            // send the completed move to both clients
-                            game->white->send_text(output);
-                            game->black->send_text(output);
+                                // send the completed move to both clients
+                                game->white->send_text(output);
+                                game->black->send_text(output);
+                            }
                         }
                     }
                 }
