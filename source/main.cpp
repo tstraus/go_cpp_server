@@ -94,6 +94,10 @@ int main(int, char** argv) {
                     auto game = games[unmatchedGames.front()];
                     bool black;
 
+                    cout << fg::yellow << "Attempting to join: " << style::reset << game->gameID << endl;
+                    cout << fg::yellow << "white: " << style::reset << game->white << endl;
+                    cout << fg::yellow << "black: " << style::reset << game->black << endl;
+
                     if (game->white == nullptr) {
                         game->white = &conn;
                         black = false;
@@ -147,6 +151,8 @@ int main(int, char** argv) {
                 // search for the game with the lost connection
                 for (auto& game : games) {
                     if (game.second->white == &conn && game.second->black != nullptr) {
+                        cout << fg::yellow << "Lost White: " << style::reset << game.second->gameID << endl;
+
                         game.second->white = nullptr;
                         msg["gameID"] = game.second->gameID;
 
@@ -158,6 +164,8 @@ int main(int, char** argv) {
                     }
 
                     else if (game.second->black == &conn && game.second->white != nullptr) {
+                        cout << fg::yellow << "Lost Black: " << style::reset << game.second->gameID << endl;
+
                         game.second->black = nullptr;
                         msg["gameID"] = game.second->gameID;
 
@@ -174,8 +182,11 @@ int main(int, char** argv) {
                 }
 
                 // remove game if it no longer has any players
-                if (!gameToRemove.empty())
-                    games.count(gameToRemove);
+                if (!gameToRemove.empty()) {
+                    cout << fg::yellow << "Removing Game: " << style::reset << gameToRemove << endl;
+
+                    games.erase(gameToRemove);
+                }
 
                 // figure out how to set the pointer of the player to nullptr in games
                 cout << fg::red << "Connection Lost: " << style::reset << reason << endl;
