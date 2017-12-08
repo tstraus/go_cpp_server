@@ -154,19 +154,19 @@ int main(int, char** argv) {
 
                 // search for the game with the lost connection
                 for (auto& game : games) {
-		    // remove connection from game
+		            // remove connection from game
                     if (game.second->white == &conn) {
                         game.second->white = nullptr;
                         msg["gameID"] = game.second->gameID;
                         unmatchedGames.push_back(game.second->gameID);
-		    } else if (game.second->black == &conn) {
+		            } else if (game.second->black == &conn) {
                         game.second->black = nullptr;
                         msg["gameID"] = game.second->gameID;
                         unmatchedGames.push_back(game.second->gameID);
-		    }
+		            }
 		    
-		    // send message to other player in game
-		    if (game.second->black != nullptr) {
+                    // send message to other player in game
+                    if (game.second->black != nullptr) {
                         cout << fg::yellow << "Lost White: " << style::reset << game.second->gameID << endl;
 
                         game.second->black->send_text(msg.dump());
@@ -230,13 +230,13 @@ int main(int, char** argv) {
                             // attempt to make the received move
                             if (game->white!=nullptr && game->black!=nullptr && game->attemptMove(color, x, y)) {
                                 json move = {
-                                        {"gameID", gameID},
-                                        {"action", "move"},
-                                        {"data",   {
-                                                           {"black", msg["data"]["black"]},
-                                                           {"x", x},
-                                                           {"y", y}
-                                                   }}
+                                    {"gameID", gameID},
+                                    {"action", "move"},
+                                    {"data", {
+                                        {"black", msg["data"]["black"]},
+                                        {"x", x},
+                                        {"y", y}
+                                    }}
                                 };
 
                                 auto output = move.dump();
