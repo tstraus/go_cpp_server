@@ -140,7 +140,7 @@ int main(int, char** argv) {
                 }
 
             })
-            .onclose([&](crow::websocket::connection& conn, const string& reason) {
+            .onclose([&](crow::websocket::connection& conn, const string& /*reason*/) {
                 lock_guard<mutex> lock(mtx);
 
                 json msg = {
