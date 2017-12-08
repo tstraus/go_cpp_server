@@ -171,6 +171,11 @@ int main(int, char** argv) {
 
                         unmatchedGames.push_back(game.second->gameID);
 
+                        // game no longer has any players
+                        if (game.second->white != nullptr && game.second->black != nullptr) {
+                            gameToRemove = game.second->gameID;
+                        }
+
                         break;
                     }
 
@@ -184,25 +189,23 @@ int main(int, char** argv) {
 
                         unmatchedGames.push_back(game.second->gameID);
 
-                        break;
-                    }
+                        // game no longer has any players
+                        if (game.second->white != nullptr && game.second->black != nullptr) {
+                            gameToRemove = game.second->gameID;
+                        }
 
-                    // game no longer has any players
-                    else if (game.second->white != nullptr && game.second->black != nullptr) {
-                        gameToRemove = game.second->gameID;
+                        break;
                     }
                 }
 
                 // remove game if it no longer has any players
-                if (!gameToRemove.empty())
-                {
+                if (!gameToRemove.empty()) {
                     cout << fg::yellow << "Removing Game: " << style::reset << gameToRemove << endl;
 
                     games.erase(gameToRemove);
 
                     unmatchedGames.erase(
-                        remove_if(unmatchedGames.begin(), unmatchedGames.end(), [&gameToRemove](string game)
-                        {
+                        remove_if(unmatchedGames.begin(), unmatchedGames.end(), [&gameToRemove](string game) {
                             return game == gameToRemove;
                         }), unmatchedGames.end()
                     );
