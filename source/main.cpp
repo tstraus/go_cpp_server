@@ -171,11 +171,6 @@ int main(int, char** argv) {
 
                         unmatchedGames.push_back(game.second->gameID);
 
-                        // game no longer has any players
-                        if (game.second->white != nullptr && game.second->black != nullptr) {
-                            gameToRemove = game.second->gameID;
-                        }
-
                         break;
                     }
 
@@ -189,12 +184,12 @@ int main(int, char** argv) {
 
                         unmatchedGames.push_back(game.second->gameID);
 
-                        // game no longer has any players
-                        if (game.second->white != nullptr && game.second->black != nullptr) {
-                            gameToRemove = game.second->gameID;
-                        }
-
                         break;
+                    }
+
+                    // game no longer has any players
+                    if (game.second->white == nullptr && game.second->black == nullptr) {
+                        gameToRemove = game.second->gameID;
                     }
                 }
 
