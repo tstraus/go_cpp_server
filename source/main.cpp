@@ -12,7 +12,7 @@
 #include <mutex>
 #include <unordered_map>
 #include <array>
-#include <queue>
+#include <deque>
 #include <algorithm>
 
 #include "game.h"
@@ -74,9 +74,6 @@ int main(int, char** argv) {
             .onopen([&](crow::websocket::connection& conn) {
                 lock_guard<mutex> lock(mtx);
 
-                cout << fg::cyan << games.size() << " Games already exist" << style::reset << endl;
-                cout << fg::cyan << unmatchedGames.size() << " Unmatched games" << style::reset << endl;
-
                 if (unmatchedGames.empty()) { // creating a new game
                     auto game = make_shared<Game>(uuid4().str());
                     game->black = &conn;
@@ -97,10 +94,6 @@ int main(int, char** argv) {
                 } else { // joining an existing game
                     auto game = games[unmatchedGames.front()];
                     bool black;
-
-                    cout << fg::yellow << "Attempting to join: " << style::reset << game->gameID << endl;
-                    cout << fg::yellow << "white: " << style::reset << game->white << endl;
-                    cout << fg::yellow << "black: " << style::reset << game->black << endl;
 
                     if (game->white == nullptr) {
                         game->white = &conn;
@@ -161,36 +154,31 @@ int main(int, char** argv) {
 
                 // search for the game with the lost connection
                 for (auto& game : games) {
-                    if (game.second->white == &conn && game.second->black != nullptr) {
-                        cout << fg::yellow << "Lost White: " << style::reset << game.second->gameID << endl;
-
+		    // remove connection from game
+                    if (game.second->white == &conn) {
                         game.second->white = nullptr;
                         msg["gameID"] = game.second->gameID;
-
-                        game.second->black->send_text(msg.dump());
-
                         unmatchedGames.push_back(game.second->gameID);
-
-                        break;
-                    }
-
-                    else if (game.second->black == &conn && game.second->white != nullptr) {
-                        cout << fg::yellow << "Lost Black : " << style::reset << game.second->gameID << endl;
-
+		    } else if (game.second->black == &conn) {
                         game.second->black = nullptr;
                         msg["gameID"] = game.second->gameID;
+                        unmatchedGames.push_back(game.second->gameID);
+		    }
+		    
+		    // send message to other player in game
+		    if (game.second->black != nullptr) {
+                        cout << fg::yellow << "Lost White: " << style::reset << game.second->gameID << endl;
+
+                        game.second->black->send_text(msg.dump());
+                    } else if (game.second->white != nullptr) {
+                        cout << fg::yellow << "Lost Black : " << style::reset << game.second->gameID << endl;
 
                         game.second->white->send_text(msg.dump());
-
-                        unmatchedGames.push_back(game.second->gameID);
-
-                        break;
                     }
 
                     // game no longer has any players
-                    if (game.second->white == nullptr && game.second->black == nullptr) {
+                    if (game.second->white == nullptr && game.second->black == nullptr)
                         gameToRemove = game.second->gameID;
-                    }
                 }
 
                 // remove game if it no longer has any players
