@@ -154,17 +154,17 @@ int main(int, char** argv) {
 
                 // search for the game with the lost connection
                 for (auto& game : games) {
-		            // remove connection from game
+                    // remove connection from game
                     if (game.second->white == &conn) {
                         game.second->white = nullptr;
                         msg["gameID"] = game.second->gameID;
                         unmatchedGames.push_back(game.second->gameID);
-		            } else if (game.second->black == &conn) {
+                    } else if (game.second->black == &conn) {
                         game.second->black = nullptr;
                         msg["gameID"] = game.second->gameID;
                         unmatchedGames.push_back(game.second->gameID);
-		            }
-		    
+                    }
+            
                     // send message to other player in game
                     if (game.second->black != nullptr) {
                         cout << fg::yellow << "Lost White: " << style::reset << game.second->gameID << endl;
