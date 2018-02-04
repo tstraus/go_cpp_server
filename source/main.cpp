@@ -210,17 +210,17 @@ int main(int, char** argv) {
                     auto game = games[gameID];
 
                     if (game != nullptr) {
-                        if (action=="chat") {
+                        if (action == "chat") {
                             auto game = games[gameID];
 
                             // forward chat message
-                            if (game->white!=nullptr && game->black!=nullptr) {
+                            if (game->white != nullptr && game->black != nullptr) {
                                 game->white->send_text(data);
                                 game->black->send_text(data);
                             }
                         }
 
-                        else if (action=="attemptMove") {
+                        else if (action == "attemptMove") {
                             auto game = games[gameID];
 
                             auto color = msg["data"]["black"] ? Game::State::BLACK : Game::State::WHITE;
@@ -228,7 +228,7 @@ int main(int, char** argv) {
                             auto y = msg["data"]["y"];
 
                             // attempt to make the received move
-                            if (game->white!=nullptr && game->black!=nullptr && game->attemptMove(color, x, y)) {
+                            if (game->white != nullptr && game->black != nullptr && game->attemptMove(color, x, y)) {
                                 json move = {
                                     {"gameID", gameID},
                                     {"action", "move"},
