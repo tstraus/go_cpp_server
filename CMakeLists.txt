@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(go_cpp_server)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
@@ -61,3 +61,4 @@ target_link_libraries(${PROJECT_NAME}
     ${Boost_LIBRARIES}
     ${CMAKE_THREAD_LIBS_INIT}
 )
+
