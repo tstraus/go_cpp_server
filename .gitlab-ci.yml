@@ -1,0 +1,10 @@
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
+build:
+  type: build
+  tags:
+    - htpc
+  script:
+    - ./configure.sh
+    - ./build.sh
