@@ -7,4 +7,5 @@ build:
     - htpc
   script:
     - ./configure.sh
-    - ./build.sh
+    - cd build
+    - make
